@@ -74,6 +74,7 @@ export default function ResponsavelPage() {
   const [confirmarPin, setConfirmarPin] = useState("");
   const [salvandoPin, setSalvandoPin] = useState(false);
   const [erroPin, setErroPin] = useState("");
+  const [configurandoDispositivo, setConfigurandoDispositivo] = useState(false);
 
   useEffect(() => {
     carregar();
@@ -428,6 +429,45 @@ export default function ResponsavelPage() {
     }
   }
 
+  async function configurarDispositivoInfantil() {
+    try {
+      setConfigurandoDispositivo(true);
+      setMensagemFinanceira("");
+
+      const response = await fetch("/api/dispositivos/configurar-infantil", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nome: "Celular infantil",
+          tipo: "celular",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Não foi possível configurar este aparelho.");
+      }
+
+      setMensagemFinanceira(
+        "Este aparelho foi configurado para o acesso infantil da sua família."
+      );
+
+      router.push("/acesso-infantil");
+    } catch (error) {
+      console.error("Erro ao configurar dispositivo infantil:", error);
+      setMensagemFinanceira(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível configurar este aparelho."
+      );
+    } finally {
+      setConfigurandoDispositivo(false);
+    }
+  }
+
   async function sair() {
     await supabase.auth.signOut();
     router.replace("/login");
@@ -768,10 +808,24 @@ export default function ResponsavelPage() {
                 <h2>Como estão as conquistas?</h2>
               </div>
 
-              <button className="addChild">
-                <span>＋</span>
-                Adicionar filho
-              </button>
+              <div className="sectionActions">
+                <button
+                  className="deviceChild"
+                  type="button"
+                  onClick={configurarDispositivoInfantil}
+                  disabled={configurandoDispositivo}
+                >
+                  <span>📱</span>
+                  {configurandoDispositivo
+                    ? "Configurando..."
+                    : "Configurar dispositivo infantil"}
+                </button>
+
+                <button className="addChild">
+                  <span>＋</span>
+                  Adicionar filho
+                </button>
+              </div>
             </div>
 
             <div className="childrenGrid">
@@ -1625,6 +1679,30 @@ export default function ResponsavelPage() {
           letter-spacing: -0.7px;
         }
 
+        .sectionActions {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+        }
+
+        .deviceChild {
+          height: 39px;
+          padding: 0 14px;
+          border: 0;
+          border-radius: 12px;
+          color: white;
+          background: linear-gradient(120deg, #6557ef, #8c5ef0);
+          box-shadow: 0 9px 20px rgba(101, 87, 239, 0.16);
+          font-size: 9px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .deviceChild:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
         .addChild {
           height: 39px;
           padding: 0 14px;
@@ -2352,6 +2430,23 @@ export default function ResponsavelPage() {
           .mobileNav button.active {
             color: #6658ec;
             background: #f1efff;
+          }
+        }
+
+        @media (max-width: 700px) {
+          .sectionHeader {
+            align-items: flex-start;
+            gap: 14px;
+          }
+
+          .sectionActions {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .deviceChild,
+          .addChild {
+            width: 100%;
           }
         }
 
